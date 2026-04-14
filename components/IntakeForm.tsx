@@ -3,9 +3,46 @@
 import React, { useState } from 'react';
 import { ChevronRight, ChevronLeft, AlertCircle } from 'lucide-react';
 
+type FormData = {
+  fullName: string;
+  email: string;
+  phone: string;
+  location: string;
+  whySaidYes: string;
+  navigating: string;
+  clarityScore: string;
+  stuck: string;
+  wouldChange: string;
+  ifNothingChanges: string;
+  alreadyTried: string;
+  whatWorked: string;
+  supportNeeded: string;
+  readiness: string;
+  investmentOpen: string;
+  investmentRange: string;
+  finalNote: string;
+};
+
+type FieldType = 'text' | 'email' | 'tel' | 'textarea' | 'select';
+
+type Field = {
+  name: keyof FormData;
+  label: string;
+  type: FieldType;
+  required?: boolean;
+  minLength?: number;
+  options?: string[];
+};
+
+type Section = {
+  title: string;
+  description: string;
+  fields: Field[];
+};
+
 const IntakeForm = () => {
   const [currentSection, setCurrentSection] = useState(0);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     fullName: '',
     email: '',
     phone: '',
@@ -24,9 +61,9 @@ const IntakeForm = () => {
     investmentRange: '',
     finalNote: ''
   });
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submissionResult, setSubmissionResult] = useState(null);
+  const [submissionResult, setSubmissionResult] = useState<{ status: string; suggestedOffer?: string; message?: string } | null>(null);
 
   const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzRAu15NUagFSrnToFlSAOms8sMsJgUhmmo4DV71EEdScsCRvgbopQyRHHUbo8dG4W7TQ/exec';
   const BOOKING_LINK = 'https://cal.com/thenatashapinto';
@@ -35,15 +72,15 @@ const IntakeForm = () => {
   const QUALIFIED_INVESTMENT_MIN = '₹2,00,000 to ₹5,00,000';
   const QUALIFIED_INVESTMENT_MAX = '₹5,00,000+';
 
-  const sections = [
+  const sections: Section[] = [
     {
       title: 'About You',
       description: 'Let\'s start with the essentials.',
       fields: [
-        { name: 'fullName', label: 'Full Name', type: 'text', required: true, minLength: 2 },
-        { name: 'email', label: 'Email Address', type: 'email', required: true },
-        { name: 'phone', label: 'Phone Number (with country code)', type: 'tel', required: true },
-        { name: 'location', label: 'City and Country', type: 'text', required: true, minLength: 2 }
+        { name: 'fullName' as const, label: 'Full Name', type: 'text', required: true, minLength: 2 },
+        { name: 'email' as const, label: 'Email Address', type: 'email', required: true },
+        { name: 'phone' as const, label: 'Phone Number (with country code)', type: 'tel', required: true },
+        { name: 'location' as const, label: 'City and Country', type: 'text', required: true, minLength: 2 }
       ]
     },
     {
@@ -91,7 +128,7 @@ const IntakeForm = () => {
     }
   ];
 
-  const calculateQualification = (data) => {
+  const calculateQualification = (data: FormData) => {
     let score = 0, qualificationStatus = 'Not Qualified', suggestedOffer = 'Nurture / No Offer Yet';
     const qualifiedRanges = [QUALIFIED_INVESTMENT_MIN, QUALIFIED_INVESTMENT_MAX];
     const isInvestedInRange = qualifiedRanges.includes(data.investmentRange);
@@ -113,7 +150,7 @@ const IntakeForm = () => {
     return { qualificationStatus, suggestedOffer, leadScore: score };
   };
 
-  const validateField = (name, value, field) => {
+  const validateField = (name: string, value: string, field: Field) => {
     if (field.required && (!value || value.trim() === '')) return 'This field is required';
     if (field.minLength && value.length < field.minLength) return `Please write at least ${field.minLength} characters`;
     if (field.type === 'email' && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Please enter a valid email';
@@ -122,18 +159,18 @@ const IntakeForm = () => {
 
   const validateSection = () => {
     const section = sections[currentSection];
-    const newErrors = {};
+    const newErrors: Record<string, string> = {};
     let isValid = true;
-    section.fields.forEach(field => {
-      const error = validateField(field.name, formData[field.name], field);
+    section.fields.forEach((field: any) => {
+      const error = validateField(field.name, formData[field.name as keyof FormData], field);
       if (error) { newErrors[field.name] = error; isValid = false; }
     });
     setErrors(newErrors);
     return isValid;
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target as HTMLInputElement;
     setFormData(prev => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
@@ -249,14 +286,14 @@ const IntakeForm = () => {
                   onBlur={(e) => e.currentTarget.style.borderColor = errors[field.name] ? '#e74c3c' : '#d9d5ce'}
                 />
               ) : field.type === 'select' ? (
-                <select id={field.name} name={field.name} value={formData[field.name]} onChange={handleInputChange}
+                <select id={field.name} name={field.name} value={formData[field.name as keyof FormData]} onChange={handleInputChange}
                   style={{ fontFamily: "'Lato', sans-serif", borderColor: errors[field.name] ? '#e74c3c' : '#d9d5ce', backgroundColor: '#fff' }}
                   className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-0"
                   onFocus={(e) => e.currentTarget.style.borderColor = '#d4af37'}
                   onBlur={(e) => e.currentTarget.style.borderColor = errors[field.name] ? '#e74c3c' : '#d9d5ce'}
                 >
                   <option value="">Select an option...</option>
-                  {field.options.map(option => <option key={option} value={option}>{option}</option>)}
+                  {field.options?.map(option => <option key={option} value={option}>{option}</option>)}
                 </select>
               ) : (
                 <input id={field.name} name={field.name} type={field.type} value={formData[field.name]} onChange={handleInputChange}
